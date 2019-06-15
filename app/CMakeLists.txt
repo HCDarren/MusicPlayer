@@ -21,7 +21,7 @@ AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR}/src/main/cpp SRC_LIST)
 
 add_library(
         # Sets the name of the library.
-        native-lib
+        music-player
         # Sets the library as a shared library.
         SHARED
         # Provides a relative path to your source file(s).
@@ -34,7 +34,7 @@ add_library(
 
 target_link_libraries( # Specifies the target library.
         # 链接额外的 ffmpeg 的编译
-        native-lib
+        music-player
         # 编解码(最重要的库)
         avcodec-57
         # 设备信息
@@ -53,7 +53,6 @@ target_link_libraries( # Specifies the target library.
         swscale-4
         # 链接 android ndk 自带的一些库
         android
-        OpenSLES
         # Links the target library to the log library
         # included in the NDK.
         log)
