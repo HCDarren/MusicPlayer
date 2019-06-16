@@ -4,15 +4,13 @@
 
 #ifndef MUSICPLAYER_DZFFMPEG_H
 #define MUSICPLAYER_DZFFMPEG_H
-
-
 #include "DZJNICall.h"
+#include <pthread.h>
 
 extern "C"{
 #include "libavformat/avformat.h"
 #include "libswresample/swresample.h"
 };
-
 
 class DZFFmpeg {
 public:
@@ -28,6 +26,10 @@ public:
 
 public:
     void play();
+
+    void prepare();
+
+    void prepareAsync();
 
     void callPlayerJniError(int code, char* msg);
 

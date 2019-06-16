@@ -11,10 +11,57 @@ DZFFmpeg::DZFFmpeg(DZJNICall *pJniCall, const char *url) {
 }
 
 DZFFmpeg::~DZFFmpeg() {
-   release();
+    release();
+}
+
+void *threadPlay(void *context) {
+    DZFFmpeg * pFFmpeg = (DZFFmpeg *) context;
+    pFFmpeg->prepare();
+    return 0;
 }
 
 void DZFFmpeg::play() {
+    // 创建一个线程去播放，多线程编解码边播放
+    pthread_t playThreadT;
+    pthread_create(&playThreadT, NULL, threadPlay, this);
+    pthread_detach(playThreadT);
+}
+
+void DZFFmpeg::callPlayerJniError(int code, char *msg) {
+    // 释放资源
+    release();
+    // 回调给 java 层调用
+    pJniCall->callPlayerError(code, msg);
+}
+
+void DZFFmpeg::release() {
+    if (pCodecContext != NULL) {
+        avcodec_close(pCodecContext);
+        avcodec_free_context(&pCodecContext);
+        pCodecContext = NULL;
+    }
+
+    if (pFormatContext != NULL) {
+        avformat_close_input(&pFormatContext);
+        avformat_free_context(pFormatContext);
+        pFormatContext = NULL;
+    }
+
+    if (swrContext != NULL) {
+        swr_free(&swrContext);
+        free(swrContext);
+        swrContext = NULL;
+    }
+
+    if (resampleOutBuffer != NULL) {
+        free(resampleOutBuffer);
+        resampleOutBuffer = NULL;
+    }
+
+    avformat_network_deinit();
+}
+
+void DZFFmpeg::prepare() {
     // 讲的理念的东西，千万要注意
     av_register_all();
     avformat_network_init();
@@ -159,36 +206,6 @@ void DZFFmpeg::play() {
     pJniCall->jniEnv->DeleteLocalRef(jPcmByteArray);
 }
 
-void DZFFmpeg::callPlayerJniError(int code, char *msg) {
-    // 释放资源
-    release();
-    // 回调给 java 层调用
-    pJniCall->callPlayerError(code, msg);
-}
+void DZFFmpeg::prepareAsync() {
 
-void DZFFmpeg::release() {
-    if (pCodecContext != NULL) {
-        avcodec_close(pCodecContext);
-        avcodec_free_context(&pCodecContext);
-        pCodecContext = NULL;
-    }
-
-    if (pFormatContext != NULL) {
-        avformat_close_input(&pFormatContext);
-        avformat_free_context(pFormatContext);
-        pFormatContext = NULL;
-    }
-
-    if (swrContext != NULL) {
-        swr_free(&swrContext);
-        free(swrContext);
-        swrContext = NULL;
-    }
-
-    if (resampleOutBuffer != NULL) {
-        free(resampleOutBuffer);
-        resampleOutBuffer = NULL;
-    }
-
-    avformat_network_deinit();
 }
