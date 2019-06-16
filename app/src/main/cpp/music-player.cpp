@@ -14,7 +14,7 @@ DZFFmpeg *pFFmpeg;
 #include "DZConstDefine.h"
 extern "C" JNIEXPORT void JNICALL
 Java_com_darren_media_DarrenPlayer_nPlay(JNIEnv *env, jobject instance, jstring url_) {
-    pJniCall = new DZJNICall(NULL,env);
+    pJniCall = new DZJNICall(NULL,env,instance);
     const char *url = env->GetStringUTFChars(url_, 0);
     pFFmpeg = new DZFFmpeg(pJniCall,url);
     pFFmpeg->play();

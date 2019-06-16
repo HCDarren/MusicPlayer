@@ -31,6 +31,8 @@ public:
 
     void callPlayerJniError(int code, char* msg);
 
+    void release();
+
 };
 
 

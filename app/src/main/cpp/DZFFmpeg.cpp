@@ -11,30 +11,7 @@ DZFFmpeg::DZFFmpeg(DZJNICall *pJniCall, const char *url) {
 }
 
 DZFFmpeg::~DZFFmpeg() {
-    if (pCodecContext != NULL) {
-        avcodec_close(pCodecContext);
-        avcodec_free_context(&pCodecContext);
-        pCodecContext = NULL;
-    }
-
-    if (pFormatContext != NULL) {
-        avformat_close_input(&pFormatContext);
-        avformat_free_context(pFormatContext);
-        pFormatContext = NULL;
-    }
-
-    if(swrContext != NULL){
-        swr_free(&swrContext);
-        free(swrContext);
-        swrContext = NULL;
-    }
-
-    if(resampleOutBuffer != NULL){
-        free(resampleOutBuffer);
-        resampleOutBuffer = NULL;
-    }
-
-    avformat_network_deinit();
+   release();
 }
 
 void DZFFmpeg::play() {
@@ -56,9 +33,8 @@ void DZFFmpeg::play() {
     if (formatOpenInputRes != 0) {
         // 第一件事，需要回调给 Java 层(下次课讲)
         // 第二件事，需要释放资源
-        // return;
         LOGE("format open input error: %s", av_err2str(formatOpenInputRes));
-        // goto __av_resources_destroy;
+        callPlayerJniError(formatOpenInputRes, av_err2str(formatOpenInputRes));
         return;
     }
 
@@ -66,7 +42,7 @@ void DZFFmpeg::play() {
     if (formatFindStreamInfoRes < 0) {
         LOGE("format find stream info error: %s", av_err2str(formatFindStreamInfoRes));
         // 这种方式一般不推荐这么写，但是的确方便
-        // goto __av_resources_destroy;
+        callPlayerJniError(formatFindStreamInfoRes, av_err2str(formatFindStreamInfoRes));
         return;
     }
 
@@ -76,7 +52,7 @@ void DZFFmpeg::play() {
     if (audioStramIndex < 0) {
         LOGE("format audio stream error: %s");
         // 这种方式一般不推荐这么写，但是的确方便
-        // goto __av_resources_destroy;
+        callPlayerJniError(FIND_STREAM_ERROR_CODE, "format audio stream error");
         return;
     }
 
@@ -86,7 +62,7 @@ void DZFFmpeg::play() {
     if (pCodec == NULL) {
         LOGE("codec find audio decoder error");
         // 这种方式一般不推荐这么写，但是的确方便
-        // goto __av_resources_destroy;
+        callPlayerJniError(CODEC_FIND_DECODER_ERROR_CODE, "codec find audio decoder error");
         return;
     }
     // 打开解码器
@@ -94,22 +70,20 @@ void DZFFmpeg::play() {
     if (pCodecContext == NULL) {
         LOGE("codec alloc context error");
         // 这种方式一般不推荐这么写，但是的确方便
-        // goto __av_resources_destroy;
+        callPlayerJniError(CODEC_ALLOC_CONTEXT_ERROR_CODE, "codec alloc context error");
         return;
     }
     codecParametersToContextRes = avcodec_parameters_to_context(pCodecContext, pCodecParameters);
     if (codecParametersToContextRes < 0) {
         LOGE("codec parameters to context error: %s", av_err2str(codecParametersToContextRes));
-        // 这种方式一般不推荐这么写，但是的确方便
-        // goto __av_resources_destroy;
+        callPlayerJniError(codecParametersToContextRes, av_err2str(codecParametersToContextRes));
         return;
     }
 
     codecOpenRes = avcodec_open2(pCodecContext, pCodec, NULL);
     if (codecOpenRes != 0) {
         LOGE("codec audio open error: %s", av_err2str(codecOpenRes));
-        // 这种方式一般不推荐这么写，但是的确方便
-        // goto __av_resources_destroy;
+        callPlayerJniError(codecOpenRes, av_err2str(codecOpenRes));
         return;
     }
 
@@ -124,10 +98,12 @@ void DZFFmpeg::play() {
             out_sample_rate, in_ch_layout, in_sample_fmt, in_sample_rate, 0, NULL);
     if (swrContext == NULL) {
         // 提示错误
+        callPlayerJniError(SWR_ALLOC_SET_OPTS_ERROR_CODE, "swr alloc set opts error");
         return;
     }
     int swrInitRes = swr_init(swrContext);
     if (swrInitRes < 0) {
+        callPlayerJniError(SWR_CONTEXT_INIT_ERROR_CODE, "swr context swr init error");
         return;
     }
     // size 是播放指定的大小，是最终输出的大小
@@ -166,7 +142,7 @@ void DZFFmpeg::play() {
                     // 0 把 c 的数组的数据同步到 jbyteArray , 然后释放native数组
                     pJniCall->jniEnv->ReleaseByteArrayElements(jPcmByteArray, jPcmData, JNI_COMMIT);
                     // TODO
-                    pJniCall->callAudioTrackWrite(jPcmByteArray,0,dataSize);
+                    pJniCall->callAudioTrackWrite(jPcmByteArray, 0, dataSize);
                 }
             }
         }
@@ -181,4 +157,38 @@ void DZFFmpeg::play() {
     // 解除 jPcmDataArray 的持有，让 javaGC 回收
     pJniCall->jniEnv->ReleaseByteArrayElements(jPcmByteArray, jPcmData, 0);
     pJniCall->jniEnv->DeleteLocalRef(jPcmByteArray);
+}
+
+void DZFFmpeg::callPlayerJniError(int code, char *msg) {
+    // 释放资源
+    release();
+    // 回调给 java 层调用
+    pJniCall->callPlayerError(code, msg);
+}
+
+void DZFFmpeg::release() {
+    if (pCodecContext != NULL) {
+        avcodec_close(pCodecContext);
+        avcodec_free_context(&pCodecContext);
+        pCodecContext = NULL;
+    }
+
+    if (pFormatContext != NULL) {
+        avformat_close_input(&pFormatContext);
+        avformat_free_context(pFormatContext);
+        pFormatContext = NULL;
+    }
+
+    if (swrContext != NULL) {
+        swr_free(&swrContext);
+        free(swrContext);
+        swrContext = NULL;
+    }
+
+    if (resampleOutBuffer != NULL) {
+        free(resampleOutBuffer);
+        resampleOutBuffer = NULL;
+    }
+
+    avformat_network_deinit();
 }

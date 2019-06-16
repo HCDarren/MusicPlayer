@@ -5,10 +5,14 @@
 #include "DZJNICall.h"
 #include "DZConstDefine.h"
 
-DZJNICall::DZJNICall(JavaVM *javaVM, JNIEnv *jniEnv) {
+DZJNICall::DZJNICall(JavaVM *javaVM, JNIEnv *jniEnv, jobject jPlayerObj) {
     this->javaVM = javaVM;
     this->jniEnv = jniEnv;
+    this->jPlayerObj = jPlayerObj;
     initCrateAudioTrack();
+
+    jclass jPlayerClass = jniEnv->GetObjectClass(jPlayerObj);
+    jPlayerErrorMid = jniEnv->GetMethodID(jPlayerClass, "onError", "(ILjava/lang/String;)V");
 }
 
 void DZJNICall::initCrateAudioTrack() {
@@ -40,9 +44,16 @@ void DZJNICall::initCrateAudioTrack() {
 }
 
 void DZJNICall::callAudioTrackWrite(jbyteArray audioData, int offsetInBytes, int sizeInBytes) {
-    jniEnv->CallIntMethod(jAudioTrackObj, jAudioTrackWriteMid, audioData, offsetInBytes, sizeInBytes);
+    jniEnv->CallIntMethod(jAudioTrackObj, jAudioTrackWriteMid, audioData, offsetInBytes,
+            sizeInBytes);
 }
 
 DZJNICall::~DZJNICall() {
     jniEnv->DeleteLocalRef(jAudioTrackObj);
+}
+
+void DZJNICall::callPlayerError(int code, char *msg) {
+    jstring jMsg = jniEnv->NewStringUTF(msg);
+    jniEnv->CallVoidMethod(jPlayerObj, jPlayerErrorMid, code, jMsg);
+    jniEnv->DeleteLocalRef(jMsg);
 }
