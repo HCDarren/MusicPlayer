@@ -39,8 +39,17 @@ public class DarrenPlayer {
         if (TextUtils.isEmpty(url)) {
             throw new NullPointerException("url is null, please call method setDataSource");
         }
-        nPlay(url);
+        nPlay();
     }
 
-    private native void nPlay(String url);
+    private native void nPlay();
+
+    public void prepare() {
+        if (TextUtils.isEmpty(url)) {
+            throw new NullPointerException("url is null, please call method setDataSource");
+        }
+        nPrepare(url);
+    }
+
+    private native void nPrepare(String url);
 }

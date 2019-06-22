@@ -5,6 +5,7 @@
 #ifndef MUSICPLAYER_DZFFMPEG_H
 #define MUSICPLAYER_DZFFMPEG_H
 #include "DZJNICall.h"
+#include "DZAudio.h"
 #include <pthread.h>
 
 extern "C"{
@@ -17,9 +18,10 @@ public:
     AVFormatContext *pFormatContext = NULL;
     AVCodecContext *pCodecContext = NULL;
     SwrContext *swrContext = NULL;
-    uint8_t *resampleOutBuffer = NULL;
-    const char* url = NULL;
+    char* url = NULL;
     DZJNICall *pJniCall = NULL;
+    DZAudio *pAudio = NULL;
+
 public:
     DZFFmpeg(DZJNICall *pJniCall, const char* url);
     ~DZFFmpeg();
@@ -31,10 +33,11 @@ public:
 
     void prepareAsync();
 
-    void callPlayerJniError(int code, char* msg);
+    void prepare(ThreadMode threadMode);
+
+    void callPlayerJniError(ThreadMode threadMode, int code, char* msg);
 
     void release();
-
 };
 
 

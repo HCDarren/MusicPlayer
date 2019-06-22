@@ -11,7 +11,7 @@ import com.darren.media.listener.MediaErrorListener;
 import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
-    File mMusicFile = new File(Environment.getExternalStorageDirectory(), "input1.mp3");
+    File mMusicFile = new File(Environment.getExternalStorageDirectory(), "input.mp3");
     // Used to load the 'native-lib' library on application startup.
     private DarrenPlayer mPlayer;
 
@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        mPlayer.prepare();
         mPlayer.play();
     }
 }
