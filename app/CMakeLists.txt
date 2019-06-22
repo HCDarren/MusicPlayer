@@ -25,7 +25,7 @@ add_library(
         # Sets the library as a shared library.
         SHARED
         # Provides a relative path to your source file(s).
-        src/main/cpp/DZFFmpeg.cpp
+        src/main/cpp/DZAudio.cpp
         ${SRC_LIST}
 )
 
@@ -54,6 +54,8 @@ target_link_libraries( # Specifies the target library.
         swscale-4
         # 链接 android ndk 自带的一些库
         android
+        # 链接 OpenSLES
+        OpenSLES
         # Links the target library to the log library
         # included in the NDK.
         log)
