@@ -16,6 +16,7 @@ public:
     JavaVM *javaVM;
     JNIEnv *jniEnv;
     jmethodID jPlayerErrorMid;
+    jmethodID jPlayerPreparedMid;
     jobject jPlayerObj;
 public:
     DZJNICall(JavaVM *javaVM, JNIEnv *jniEnv, jobject jPlayerObj);
@@ -23,6 +24,8 @@ public:
 
 public:
     void callPlayerError(ThreadMode threadMode,int code, char *msg);
+
+    void callPlayerPrepared(ThreadMode mode);
 };
 
 

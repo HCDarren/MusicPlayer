@@ -27,7 +27,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *javaVM, void *reserved) {
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_darren_media_DarrenPlayer_nPlay(JNIEnv *env, jobject instance) {
-    if (pFFmpeg == NULL) {
+    if (pFFmpeg != NULL) {
         pFFmpeg->play();
     }
 }
@@ -40,6 +40,18 @@ Java_com_darren_media_DarrenPlayer_nPrepare(JNIEnv *env, jobject instance, jstri
         pJniCall = new DZJNICall(pJavaVM, env, instance);
         pFFmpeg = new DZFFmpeg(pJniCall, url);
         pFFmpeg->prepare();
+    }
+    env->ReleaseStringUTFChars(url_, url);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_darren_media_DarrenPlayer_nPrepareAsync(JNIEnv *env, jobject instance, jstring url_) {
+    const char *url = env->GetStringUTFChars(url_, 0);
+    if (pFFmpeg == NULL) {
+        pJniCall = new DZJNICall(pJavaVM, env, instance);
+        pFFmpeg = new DZFFmpeg(pJniCall, url);
+        pFFmpeg->prepareAsync();
     }
     env->ReleaseStringUTFChars(url_, url);
 }
