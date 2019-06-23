@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.darren.media.DarrenPlayer;
 import com.darren.media.listener.MediaErrorListener;
+import com.darren.media.listener.MediaPreparedListener;
 
 import java.io.File;
 
@@ -34,7 +35,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mPlayer.prepare();
-        mPlayer.play();
+        mPlayer.setOnPreparedListener(new MediaPreparedListener() {
+            @Override
+            public void onPrepared() {
+                Log.e("TAG", "准备完毕");
+                mPlayer.play();
+            }
+        });
+        mPlayer.prepareAsync();
     }
 }
